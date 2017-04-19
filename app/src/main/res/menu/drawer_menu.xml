@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <item android:title="Search"
+        android:icon="@android:drawable/ic_menu_search"
+        android:id="@+id/search" />
+    <item android:title="My List"
+        android:id="@+id/my_list"
+        android:icon="?android:attr/actionModeCopyDrawable" />
+    <group android:id="@+id/filter">
+        <item android:title="Popular"
+            android:id="@+id/popular"
+            android:icon="@null" />
+        <item android:title="Top Rated"
+            android:id="@+id/top_rated" />
+        <item android:title="Upcoming"
+            android:id="@+id/upcoming"/>
+    </group>
+</menu>

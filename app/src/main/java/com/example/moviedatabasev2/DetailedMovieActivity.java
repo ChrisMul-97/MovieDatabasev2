@@ -1,6 +1,8 @@
 package com.example.moviedatabasev2;
 
+import android.content.Context;
 import android.content.Intent;
+import android.net.ConnectivityManager;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
@@ -82,8 +84,25 @@ public class DetailedMovieActivity extends AppCompatActivity {
         int id = intent.getIntExtra("id", 550);
         if (id != 0)
         {
-            new JSONTask().execute("https://api.themoviedb.org/3/movie/" + id +"?api_key=9e295dfde4d031c0baf4813fbb3814a6&language=en-US");
+            if (getInternetConnection())
+                new JSONTask().execute("https://api.themoviedb.org/3/movie/" + id +"?api_key=9e295dfde4d031c0baf4813fbb3814a6&language=en-US");
+            else
+                getSupportActionBar().setTitle("No Internet Connection");
         }
+    }
+
+    private boolean getInternetConnection() {
+        Context context = getApplicationContext();
+        ConnectivityManager connectivityManager = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
+
+        if (connectivityManager.getActiveNetworkInfo() != null)
+            if (connectivityManager.getActiveNetworkInfo().isAvailable() && connectivityManager.getActiveNetworkInfo().isConnected()) {
+                return true;
+            } else {
+                return false;
+            }
+        else
+            return false;
     }
 
     public boolean onSupportNavigateUp() {

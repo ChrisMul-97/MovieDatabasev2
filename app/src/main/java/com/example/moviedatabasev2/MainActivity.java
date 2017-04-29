@@ -4,6 +4,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.net.ConnectivityManager;
 import android.os.AsyncTask;
 import android.provider.ContactsContract;
 import android.support.annotation.NonNull;
@@ -87,14 +88,26 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         NavigationView navigationView = (NavigationView) findViewById(R.id.nav_view);
         navigationView.setNavigationItemSelectedListener(this);
 
-        new JSONTaskList().execute("https://api.themoviedb.org/3/movie/" + filter + "?api_key=9e295dfde4d031c0baf4813fbb3814a6&page=" + pageNumberInt);
+        if (getInternetConnection() == true)
+            new JSONTaskList().execute("https://api.themoviedb.org/3/movie/" + filter + "?api_key=9e295dfde4d031c0baf4813fbb3814a6&page=" + pageNumberInt);
+        else
+        {
+            NoInternetConnectionList();
+        }
 
         buttonNextPage.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                pageNumberInt++;
-                new JSONTaskList().execute("https://api.themoviedb.org/3/movie/" + filter + "?api_key=9e295dfde4d031c0baf4813fbb3814a6&page=" + pageNumberInt);
-                pageNumber.setText("" + pageNumberInt);
+                if (getInternetConnection())
+                {
+                    pageNumberInt++;
+                    new JSONTaskList().execute("https://api.themoviedb.org/3/movie/" + filter + "?api_key=9e295dfde4d031c0baf4813fbb3814a6&page=" + pageNumberInt);
+                    pageNumber.setText("" + pageNumberInt);
+                }
+                else
+                {
+                    NoInternetConnectionList();
+                }
             }
         });
 
@@ -102,9 +115,16 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
             @Override
             public void onClick(View v) {
                 if (pageNumberInt > 1) {
-                    pageNumberInt--;
-                    new JSONTaskList().execute("https://api.themoviedb.org/3/movie/" + filter + "?api_key=9e295dfde4d031c0baf4813fbb3814a6&page=" + pageNumberInt);
-                    pageNumber.setText("" + pageNumberInt);
+                    if (getInternetConnection())
+                    {
+                        pageNumberInt--;
+                        new JSONTaskList().execute("https://api.themoviedb.org/3/movie/" + filter + "?api_key=9e295dfde4d031c0baf4813fbb3814a6&page=" + pageNumberInt);
+                        pageNumber.setText("" + pageNumberInt);
+                    }
+                    else
+                    {
+                        NoInternetConnectionList();
+                    }
                 }
             }
         });
@@ -113,10 +133,48 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         imageButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Intent intent = new Intent(MainActivity.this, SecondActivity.class);
-                MainActivity.this.startActivity(intent);
+                if (getInternetConnection()) {
+                    Intent intent = new Intent(MainActivity.this, SecondActivity.class);
+                    MainActivity.this.startActivity(intent);
+                }
+                else
+                    NoInternetConnectionList();
             }
         });
+    }
+
+    private boolean getInternetConnection() {
+        Context context = getApplicationContext();
+        ConnectivityManager connectivityManager = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
+
+        if (connectivityManager.getActiveNetworkInfo() != null)
+            if (connectivityManager.getActiveNetworkInfo().isAvailable() && connectivityManager.getActiveNetworkInfo().isConnected()) {
+                return true;
+            } else {
+                return false;
+            }
+        else
+            return false;
+    }
+
+    private void NoInternetConnectionList()
+    {
+
+        movieList.setVisibility(View.VISIBLE);
+        progressBar.setVisibility(View.VISIBLE);
+        List<Movie> failList = new ArrayList<Movie>();
+        Movie errorMovie = new Movie();
+        errorMovie.setName("No Internet Connection :(");
+        errorMovie.setRealeaseDate("Coming soon?");
+        errorMovie.setVoteAverage(0);
+        failList.add(errorMovie);
+        MovieAdapter adapter = new MovieAdapter(getApplicationContext(), R.layout.movie_layout, failList);
+        if (movieList != null) {
+            progressBar.setVisibility(View.GONE);
+            movieList.setVisibility(View.VISIBLE);
+            movieList.setAdapter(adapter);
+        }
+        getSupportActionBar().setTitle("Offline");
     }
 
     @Override
@@ -124,37 +182,57 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         int id = item.getItemId();
 
         if (id == R.id.search) {
-            Intent intent = new Intent(MainActivity.this, SecondActivity.class);
-            drawer.closeDrawers();
-            MainActivity.this.startActivity(intent);
+            if (getInternetConnection())
+            {
+                Intent intent = new Intent(MainActivity.this, SecondActivity.class);
+                drawer.closeDrawers();
+                MainActivity.this.startActivity(intent);
+            }
+            else
+                NoInternetConnectionList();
         }
         if (id == R.id.popular) {
             if (!(filter.equals("popular"))) {
-                pageNumberInt = 1;
-                pageNumber.setText("" + pageNumberInt);
-                filter = "popular";
-                getSupportActionBar().setTitle("Popular");
-                new JSONTaskList().execute("https://api.themoviedb.org/3/movie/" + filter + "?api_key=9e295dfde4d031c0baf4813fbb3814a6&page=" + pageNumberInt);
+                if (getInternetConnection())
+                {
+                    pageNumberInt = 1;
+                    pageNumber.setText("" + pageNumberInt);
+                    filter = "popular";
+                    getSupportActionBar().setTitle("Popular");
+                    new JSONTaskList().execute("https://api.themoviedb.org/3/movie/" + filter + "?api_key=9e295dfde4d031c0baf4813fbb3814a6&page=" + pageNumberInt);
+                }
+                else
+                    NoInternetConnectionList();
             }
             drawer.closeDrawers();
         }
         if (id == R.id.top_rated) {
             if (!(filter.equals("top_rated"))) {
-                pageNumberInt = 1;
-                pageNumber.setText("" + pageNumberInt);
-                filter = "top_rated";
-                getSupportActionBar().setTitle("Top Rated");
-                new JSONTaskList().execute("https://api.themoviedb.org/3/movie/" + filter + "?api_key=9e295dfde4d031c0baf4813fbb3814a6&page=" + pageNumberInt);
+                if (getInternetConnection())
+                {
+                    pageNumberInt = 1;
+                    pageNumber.setText("" + pageNumberInt);
+                    filter = "top_rated";
+                    getSupportActionBar().setTitle("Top Rated");
+                    new JSONTaskList().execute("https://api.themoviedb.org/3/movie/" + filter + "?api_key=9e295dfde4d031c0baf4813fbb3814a6&page=" + pageNumberInt);
+                }
+                else
+                    NoInternetConnectionList();
             }
             drawer.closeDrawers();
         }
         if (id == R.id.upcoming) {
             if (!(filter.equals("upcoming"))) {
-                pageNumberInt = 1;
-                pageNumber.setText("" + pageNumberInt);
-                filter = "upcoming";
-                getSupportActionBar().setTitle("Upcoming");
-                new JSONTaskList().execute("https://api.themoviedb.org/3/movie/" + filter + "?api_key=9e295dfde4d031c0baf4813fbb3814a6&page=" + pageNumberInt);
+                if (getInternetConnection())
+                {
+                    pageNumberInt = 1;
+                    pageNumber.setText("" + pageNumberInt);
+                    filter = "upcoming";
+                    getSupportActionBar().setTitle("Upcoming");
+                    new JSONTaskList().execute("https://api.themoviedb.org/3/movie/" + filter + "?api_key=9e295dfde4d031c0baf4813fbb3814a6&page=" + pageNumberInt);
+                }
+                else
+                    NoInternetConnectionList();
             }
             drawer.closeDrawers();
         }
@@ -299,11 +377,18 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
             button.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
-                    Intent intent = new Intent(MainActivity.this, DetailedMovieActivity.class);
-                    intent.putExtra("name", list.get(position).getName());
-                    intent.putExtra("id", list.get(position).getId());
-                    intent.putExtra("genres", list.get(position).getGenreId());
-                    MainActivity.this.startActivity(intent);
+                    if (getInternetConnection())
+                    {
+                        Intent intent = new Intent(MainActivity.this, DetailedMovieActivity.class);
+                        intent.putExtra("name", list.get(position).getName());
+                        intent.putExtra("id", list.get(position).getId());
+                        intent.putExtra("genres", list.get(position).getGenreId());
+                        MainActivity.this.startActivity(intent);
+                    }
+                    else
+                    {
+                        NoInternetConnectionList();
+                    }
                 }
             });
 

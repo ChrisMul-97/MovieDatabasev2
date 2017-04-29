@@ -4,6 +4,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.net.ConnectivityManager;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
@@ -98,7 +99,45 @@ public class SecondActivity extends AppCompatActivity {
         {
             searchFinal = searchFinal.substring(0, searchFinal.length()-1);
         }
-        new JSONTask().execute("https://api.themoviedb.org/3/search/movie?&api_key=9e295dfde4d031c0baf4813fbb3814a6&page=1&query=" + searchFinal);
+        if (getInternetConnection())
+            new JSONTask().execute("https://api.themoviedb.org/3/search/movie?&api_key=9e295dfde4d031c0baf4813fbb3814a6&page=1&query=" + searchFinal);
+        else
+            NoInternetConnectionList();
+
+    }
+
+    private boolean getInternetConnection() {
+        Context context = getApplicationContext();
+        ConnectivityManager connectivityManager = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
+
+        if (connectivityManager.getActiveNetworkInfo() != null)
+            if (connectivityManager.getActiveNetworkInfo().isAvailable() && connectivityManager.getActiveNetworkInfo().isConnected()) {
+                return true;
+            } else {
+                return false;
+            }
+        else
+            return false;
+    }
+
+    private void NoInternetConnectionList()
+    {
+
+        listView.setVisibility(View.VISIBLE);
+        progressBar.setVisibility(View.VISIBLE);
+        List<Movie> failList = new ArrayList<Movie>();
+        Movie errorMovie = new Movie();
+        errorMovie.setName("No Internet Connection :(");
+        errorMovie.setRealeaseDate("Coming soon?");
+        errorMovie.setVoteAverage(0);
+        failList.add(errorMovie);
+        MovieAdapter adapter = new MovieAdapter(getApplicationContext(), R.layout.movie_layout, failList);
+        if (listView != null) {
+            progressBar.setVisibility(View.GONE);
+            listView.setVisibility(View.VISIBLE);
+            listView.setAdapter(adapter);
+        }
+        getSupportActionBar().setTitle("Offline");
     }
 
     private class JSONTask extends AsyncTask<String, String, List<Movie>> {
@@ -156,7 +195,7 @@ public class SecondActivity extends AppCompatActivity {
                         for (int j = 0; j < genreArray.length(); j++) {
                             genreIds[j] = genreArray.getInt(j);
                         }
-                        Movie movieObject = new Movie(name, description, releaseDate, posterPath, language, rating, id, numVotes, genreIds);
+                        Movie movieObject = new Movie(name, description, releaseDate, posterPath, language, rating, numVotes, id, genreIds);
                         movieList.add(movieObject);
                     }
                 }
@@ -211,23 +250,20 @@ public class SecondActivity extends AppCompatActivity {
 
     public class MovieAdapter extends ArrayAdapter {
 
-        private int resource;
         private List<Movie> list;
         private LayoutInflater inflater;
 
         public MovieAdapter(Context context, int resource, List objects) {
             super(context, resource, objects);
-            this.resource = resource;
             this.list = objects;
             this.inflater = (LayoutInflater) getSystemService(LAYOUT_INFLATER_SERVICE);
         }
 
         @NonNull
         @Override
-        public View getView(int position, View convertView, ViewGroup parent) {
-            if (convertView == null)
-            {
-                convertView = inflater.inflate(R.layout.movie_layout, null);
+        public View getView(final int position, View convertView, ViewGroup parent) {
+            if (convertView == null) {
+                convertView = inflater.inflate(R.layout.movie_layout,parent,false);
             }
 
             ImageView imageView = (ImageView) convertView.findViewById(R.id.imageView);
@@ -235,17 +271,31 @@ public class SecondActivity extends AppCompatActivity {
             TextView textView2 = (TextView) convertView.findViewById(R.id.textView2);
             TextView textView3 = (TextView) convertView.findViewById(R.id.textView3);
             RatingBar ratingBar = (RatingBar) convertView.findViewById(R.id.ratingBar);
-            if (list.get(position).getPosterPath() != "error") {
-                new ImageTask(imageView).execute("https://image.tmdb.org/t/p/w500" + list.get(position).getPosterPath());
-            }
-            else {
-                //imageView.setImageResource();
-            }
+            Button button = (Button) convertView.findViewById(R.id.buttonMore);
+            new ImageTask(imageView).execute("https://image.tmdb.org/t/p/w500" + list.get(position).getPosterPath());
             textView.setText(list.get(position).getName());
             textView2.setText(list.get(position).getRealeaseDate());
             textView3.setText(list.get(position).getNumVotes() + " people have voted");
             ratingBar.setNumStars(5);
-            ratingBar.setRating((float)list.get(position).getVoteAverage()/2);
+            ratingBar.setRating((float) list.get(position).getVoteAverage()/2);
+
+            button.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    if (getInternetConnection())
+                    {
+                        Intent intent = new Intent(SecondActivity.this, DetailedMovieActivity.class);
+                        intent.putExtra("name", list.get(position).getName());
+                        intent.putExtra("id", list.get(position).getId());
+                        intent.putExtra("genres", list.get(position).getGenreId());
+                        SecondActivity.this.startActivity(intent);
+                    }
+                    else
+                    {
+                        NoInternetConnectionList();
+                    }
+                }
+            });
 
             return convertView;
         }

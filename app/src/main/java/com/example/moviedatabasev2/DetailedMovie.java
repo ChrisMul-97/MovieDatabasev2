@@ -6,11 +6,11 @@ package com.example.moviedatabasev2;
 
 public class DetailedMovie extends Movie {
 
-    String tagline;
-    String runtime;
-    String buget;
-    String revenue;
-    String [] genreArray;
+    private String tagline;
+    private String runtime;
+    private String buget;
+    private String revenue;
+    private String [] genreArray;
 
     public DetailedMovie(String name, String description, String realeaseDate, String posterPath, String language, double voteAverage, int numVotes, int id, int[] genreId, String tagline, String runtime, String budget, String revenue, String [] genreIdName)
     {
